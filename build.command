@@ -4,14 +4,7 @@ fileName=main
 
 control_c() 
 {
-	rm *.aux
-	rm *.bbl
-	rm *.blg
-	rm *.log
-	rm *latexmk
-	rm *.fls
-	rm *.synctex.gz
-	rm *.out
+	latexmk -c
 	find . -name "*converted-to.pdf" -type f -delete
 
 	if [ -d ".git" ]; then
@@ -42,7 +35,7 @@ if [[ $(uname) = Darwin ]]; then
 
 	sleep 2
 	latexmk -c
-	latexmk -pvc -f -xelatex -synctex=1 -silent $fileName.tex 
+	latexmk -pvc -f -xelatex -synctex=1 -silent $fileName 
 fi
 
 
