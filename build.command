@@ -4,7 +4,14 @@ fileName=main
 
 control_c() 
 {
-	latexmk -c
+	rm *.aux
+	rm *.bbl
+	rm *.blg
+	rm *.log
+	rm *latexmk
+	rm *.fls
+	rm *.synctex.gz
+	rm *.out
 	find . -name "*converted-to.pdf" -type f -delete
 
 	if [ -d ".git" ]; then
@@ -21,7 +28,7 @@ if [[ $(uname) = Linux ]]; then
 
 	sleep 2
 	latexmk -c
-	latexmk -pvc -xelatex -synctex=1 -silent ./$fileName.tex 
+	latexmk -pvc -f -xelatex -synctex=1 -silent ./$fileName 
 
 fi
 
