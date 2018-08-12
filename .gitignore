@@ -5,3 +5,6 @@
 *.pdf
 *.synctex.gz
 *.fls
+*Conflict.gz
+*.bbl
+*.blg
