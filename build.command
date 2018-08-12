@@ -23,8 +23,8 @@ trap control_c SIGINT
 
 if [[ $(uname) = Linux ]]; then
 
-	okular   ./$fileName.pdf > /dev/null 2>&1 &
-	subl ./$fileName.tex > /dev/null 2>&1 &
+	okular ./$fileName.pdf > /dev/null 2>&1 &
+	subl ./$fileName.tex > /dev/null 2>&1 -n . &
 
 	sleep 2
 	latexmk -c

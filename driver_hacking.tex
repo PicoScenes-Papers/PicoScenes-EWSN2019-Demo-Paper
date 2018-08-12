@@ -1,3 +1,65 @@
 %!TEX root = main.tex
 
-driver.tex
+
+
+The resolution of wireless sensing is inversely proportional to the bandwidth. 
+% The latest 802.11ac/11ax Wi-Fi can work in 160MHz bandwidth, or 6.2$ns$ timing resolution,
+% however, it is still insignificant compared to Ultra-Wide Bandwidth (UWB).
+%On the other hand, the COTS 802.11ac Wi-Fi can provide 8 spatial streams in one single station, while the UWB system, which is sketched upon the Vector Network Analyzer (VNA) or USRP, is lack of scalability.
+Aiming to achieve finer resolution on COTS devices, 
+both Xie \etal~\cite{Xie2015Precise} and Zhu \etal~\cite{Zhu:2018fc} 
+propose the spectrum stitching technology.
+However, both suffer from the standard Wi-Fi channelization, \ie,
+very limited total bandwidth,
+channel discontinuity in 5GHz band,
+and the coarse 5/20MHz channel spacing.
+
+To the best of our knowledge,
+Atheros ar9300 series and Intel 5300 NICsare 
+the only feasible platforms for spectrum stitching technology,
+because the stitching depends on CSI measurement, 
+which is publicly available only on these two platforms\cite{csitool, Xie2015Precise}.
+Nevertheless, two NICs have different architects under the hood.
+%
+Intel 5300 adopts the \textit{fullMAC} architect, 
+that the radio front end only communicates with the a piece of close-sourced firmware;
+while the kernel driver, resembling a messenger, is blocked from the PHY layer control.
+%
+On the contrary, ar9300 series adopt the \textit{softMAC} design, \ie, firmware-free.
+In this case, the kernel driver controls the every aspect of the hardware details, 
+such as the one of our most interesting controls, the central frequency (CF) synthesizer.
+
+Since both NICs support 2.4/5GHz dual-band Wi-Fi, 
+their CF synthesizers, at least in hardware aspect, support much larger working range and finer resolution.
+We failed on synthesizer tuning on Intel 5300, due to its \textit{fullMAC} architect.
+Fortunately, on ar9300 NIC, we successfully override its CF synthesizer control and perform evaluations to find the true CF range boundary. The verified CF range boundary is summarized in Table~\ref{tab:cf_tuning_range}\footnote{The CF tuning resolution is a precise value reversely engineered from the driver; however, the CF ranges are explored by experiments and is relatively \textit{conservative}.}. 
+
+Besides the tuning range, 
+the CF switching speed is also blazingly fast. 
+In same-band case, the switching costs less than 1$us$. 
+In cross-band case, hardware reset is required 
+and it costs less than 40$us$ on a dual-core laptop.
+In such short time, the standard 600MHz bandwidth in 5GHz band can be scanned in just less than 3$ms$, which is much smaller than the coherently in typical indoor environment.
+
+
+
+
+\begin{table}[tb]
+	\caption{CF Tuning Boundary }
+	\label{tab:cf_tuning_range}
+	\centering
+
+	\begin{tabular}{llll}
+	\hline
+
+	\hline
+	\textbf{Band} & \textbf{Lower-Bound} & \textbf{Upper-Bound} & \textbf{Resolution} \\
+	\hline
+	2.4GHz & 2.2GHz & 2.9GHz & 250Hz \\
+	\hline
+	5GHz   & 4.4GHz & 6.1GHz & 1KHz \\
+	\hline
+
+	\hline
+	\end{tabular}
+\end{table}
