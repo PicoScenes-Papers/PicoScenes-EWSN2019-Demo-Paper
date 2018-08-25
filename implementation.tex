@@ -1,3 +1,62 @@
 % !TEX root = main.tex
 
-implementation.tex
+\subsection{Unlock UWB Scan on COTS Hardware} % (fold)
+\label{sub:unlock_uwb_Scan_access_on_cots}
+
+Atheros ar9300 series and Intel 5300 NICs 
+are both available for CSI measurement\cite{csitool, Xie2015Precise}, 
+however, for spectrum stitching, ar9300 series has significant advantage.
+%
+ar9300 series NIC adopt the \textit{soft}-MAC architect, 
+\ie, the kernel driver controls the every aspect of the hardware details, 
+such as the $cf$ synthesizer, I/Q configuration, \etc.
+%
+On the contrary, 5300 adopts the \textit{full}-MAC architect, 
+\ie, the kernel driver, more like a messenger to the firmware, has much less control over the PHY layer.
+
+Based on the thorough investigation into the kernel driver, 
+we successfully override the $cf$ synthesizer control of the ar9300 NIC,
+and eventually unlock the complete hardware capability for UWB sensing. 
+Table~\ref{tab:cf_tuning_range} details the unlocked hardware characteristics. 
+
+With the unlocked hardware, we can ....;
+
+\begin{table}[tb]
+	\caption{Unlocked Hardware Characteristics}
+	\label{tab:cf_tuning_range}
+	\centering
+
+	\begin{tabular}{c|cc}
+	\hline
+
+	\hline
+	\multicolumn{3}{c}{$cf$ Tuning Range \& Resolution} \\
+	\hline
+	Band$^1$ & Range & Resolution\\
+	\hline
+	2.4G & $2.2\sim 3.0$GHz & 250Hz \\
+	% \hline
+	5G   & $4.4\sim 6.1$GHz & 1KHz \\
+	\hline
+
+	\hline
+	\multicolumn{3}{c}{$cf$ Tuning Speed} \\
+	\hline
+	Tuning Mode & \multicolumn{2}{c}{Time Cost}\\
+	\hline
+	Direct$^1$ & \multicolumn{2}{c}{20$us$} \\
+	% \hline
+	Normal$^2$   & \multicolumn{2}{c}{90$us$} \\
+	% \hline
+	Full-Reset$^3$   & \multicolumn{2}{c}{500$us$} \\
+	\hline
+	\end{tabular}
+	\caption*{1. The hardware adopts different signal paths for 2.4/5GHz band, thus the range and resolution are different and they are discontinuous. 2. $Direct$ mode only changes the synthesizer;
+	3. $Normal$ mode is the original tuning strategy handling non-cross band case; 4. $Full-Reset$ is the original tuning strategy handling cross-band case. }
+\end{table}
+
+
+\subsection{Kernel and Use Space Platform} % (fold)
+\label{sub:picoscenes_platfrom}
+
+% subsection picoscenes_platfrom (end)
