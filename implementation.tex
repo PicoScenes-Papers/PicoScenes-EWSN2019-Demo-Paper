@@ -44,19 +44,30 @@ With the unlocked hardware, we can ....;
 	\hline
 	Tuning Mode & \multicolumn{2}{c}{Time Cost}\\
 	\hline
-	Direct$^1$ & \multicolumn{2}{c}{20$us$} \\
+	Direct$^2$ & \multicolumn{2}{c}{20$us$} \\
 	% \hline
-	Normal$^2$   & \multicolumn{2}{c}{90$us$} \\
+	Normal$^3$   & \multicolumn{2}{c}{90$us$} \\
 	% \hline
-	Full-Reset$^3$   & \multicolumn{2}{c}{500$us$} \\
+	Normal-Reset$^4$   & \multicolumn{2}{c}{500$us$} \\
 	\hline
 	\end{tabular}
 	\caption*{1. The hardware adopts different signal paths for 2.4/5GHz band, thus the range and resolution are different and they are discontinuous. 2. $Direct$ mode only changes the synthesizer;
-	3. $Normal$ mode is the original tuning strategy handling non-cross band case; 4. $Full-Reset$ is the original tuning strategy handling cross-band case. }
+	3. $Normal$ mode is the original tuning strategy handling non-cross band case; 4. $Normal-Reset$ is the procedure handling the cross-band case. }
 \end{table}
 
 
 \subsection{Kernel and Use Space Platform} % (fold)
 \label{sub:picoscenes_platfrom}
+
+In kernel space, we introduce PicoScenes RT-Kernel (currently based on  LTS-version Linux kernel 4.9 and Linux RT customization). We enhance the reconfigurability of ath9k driver, including the direct runtime hacking for $cf$ synthesizer, Tx-power, Tx/Rx Chainmask, and \etc. Besides that, we also merge the kernel hacking of Intel 5300 CSI Tool. In this way, we for the first time propose an unified Linux kernel for CSI measurement from both ar9300 and Intel 5300. 
+
+On user space, we introduce \textbf{PicoScenes} UWB array control platform. Rather than a monolithic App, \ourprotocol adopts the ``Platform + Plug-Ins'' design. The \ourprotocol platform, written in C++17, offers an extensive range of APIs and interfaces for low-level status retrieving/controlling, CSI extraction, and on-line CSI processing. 
+To scale up the workload for one NIC to many, 
+the platform adopts the \textit{reactive} paradigm and industrial-grade multi-threading API.
+
+As a reliable and highly efficient Swiss Army Knife for NIC control, \ourprotocol platform dramatically simplify and solidify the development of ar9300/Intel5300 based UWB application.
+For example, the core handle function of round-trip channel measurement plug-in is written in less than 300 lines.
+
+
 
 % subsection picoscenes_platfrom (end)
