@@ -1,3 +1,35 @@
 % !TEX root = main.tex
 
-stitching.tex
+\subsection{Phase Error Removal} % (fold)
+\label{sub:signal_model}
+
+The phase measurement $\phi(k)$ for sub-carrier $k$ of the $i$-th package can be expressed as
+\begin{equation}
+\label{eq:phase_equation}
+	\phi_k = \theta_k - 2\pi\cdot k\cdot f_s\cdot(\delta_i + \lambda_{sfo}) + \lambda_{cfo}
+\end{equation}
+where $\theta_k$ is in-air channel phase measurement; $f_s$ is the subcarrier bandwidth, \ie 312.5KHz in 802.11n case, \delta_i$ and $\lambda_{sfo}$ are the time delay caused by Packet Detection Delay (PDD) and baseband Sampling Frequency Offset (SFO), respectively; and $\lambda_{cfo}$ is the phase offset introduced by Carrier Frequency Offset (CFO).
+
+\subsubsection{Removing PDD Error $\delta_i$} % (fold)
+\label{ssub:removing_pdd}
+The packet detection uncertainty cause the per-packet time shift, \ie PDD term $\delta_i$ in \equref{eq:phase_equation}. To remove PDD error, we leverage an observation that, PDD follows a Gussian distribution with the zero mean\cite{Speth1999Optimum}. According to the law of large numbers, $\delta_i$ can be removed by averaging over the raw phase measurement $\phi$.
+% subsubsection removing_pdd (end)
+
+\subsubsection{Removing SFO Error $\lambda_{sfo}} % (fold)
+\label{ssub:removing_sfo}
+
+The baseband sampling frqeuency of the communication pair is not strictly aligned, 
+and their frequency offset causes a minute-scale time shift, 
+\ie SFO term $\lambda_{sfo}$ in \equref{eq:phase_equation}. 
+SFO, manifesting itself as an \textit{slope} term in phase measurement, 
+has significant impact on UWB stitching.
+
+
+
+% subsubsection removing_sfo (end)
+
+
+
+
+
+% subsection signal_model (end)

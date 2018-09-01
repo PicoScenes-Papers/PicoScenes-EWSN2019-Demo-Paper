@@ -3,23 +3,62 @@
 \subsection{Unlock UWB Scan on COTS Hardware} % (fold)
 \label{sub:unlock_uwb_Scan_access_on_cots}
 
-Atheros ar9300 series and Intel 5300 NICs 
-are both available for CSI measurement\cite{csitool, Xie2015Precise}, 
-however, for spectrum stitching, ar9300 series has significant advantage.
-%
-ar9300 series NIC adopt the \textit{soft}-MAC architect, 
-\ie, the kernel driver controls the every aspect of the hardware details, 
-such as the $cf$ synthesizer, I/Q configuration, \etc.
-%
-On the contrary, 5300 adopts the \textit{full}-MAC architect, 
-\ie, the kernel driver, more like a messenger to the firmware, has much less control over the PHY layer.
 
-Based on the thorough investigation into the kernel driver, 
-we successfully override the $cf$ synthesizer control of the ar9300 NIC,
-and eventually unlock the complete hardware capability for UWB sensing. 
+To support 2.4/5GHz dual-band,
+the Wi-Fi NIC hardware is actually capable of accessing much wider spectrum than the standard Wi-Fi channels.
+Taking the Atheros 9300 series NIC as an example,
+according to its spec\cite{atheros_issc_papers},
+the hardware supports fine-grained GHz wide spectrum accessing in 5GHz band, 
+and half width in 2GHz band but with even finer resolution.
+Obviously, if we can unlock the full hardware capability, 
+we will have UWB spectrum access right here on COTS Wi-Fi NICs.
+
+The access to channel estimation is the other prerequisite for spectrum stitching.
+Atheros ar9300 series and Intel 5300 NICs 
+are the only two COTS NICs that are publicly available for CSI measurement\cite{csitool, Xie2015Precise}.
+Nevertheless, ar9300 has much greater potential for unlocking UWB access.
+%
+Adopt the \textit{soft}-MAC architect, 
+the kernel driver of ar9300 series NIC (a.k.a \textit{ath9k} driver) 
+has direct and fine-grained access to the every aspect of the hardware, 
+such as the $cf$ synthesizer, antenna configuration, tx-power, \etc.
+%
+On the contrary, 5300 adopts the \textit{full}-MAC architect.
+the close-sourced firmware running on-board takes full control over the hardware,
+while the kernel driver,
+only handling the high-level things,
+has none of the hardware control.
+
+
+After thorough exploration into the \textit{ath9k} driver, 
+we liberate its $cf$ synthesizer control to the full capability of the hardware 
+whilst retaining the CSI measurement,
+ergo, 
+we successfully unlock the UWB spectrum access in ar9300 NIC. 
 Table~\ref{tab:cf_tuning_range} details the unlocked hardware characteristics. 
 
-With the unlocked hardware, we can ....;
+
+\subsection{PicoScenes Kernel + Platform} % (fold)
+\label{sub:picoscenes_platfrom}
+
+We encapsulate numerous kernel customizations into our \ourprotocol Kernel, which tracks Linux kernel LTS version (currently v4.9). We greatly enhance the reconfigurability of ath9k driver, including the runtime hacking for $cf$ synthesizer, tx-power, tx/rx chainmask, multi-NIC CSI extraction, \etc. Besides that, we also merge Intel 5300 CSI Tool\cite{csitool} into PicoScenes Kernel. To the best of our knowledge, \ourprotocol Kernel is the first unified kernel for CSI measurement.
+
+In user space, we develop \ourprotocol UWB array control Platform. 
+Rather than a monolithic App, 
+\ourprotocol adopts ``Platform + Plug-Ins'' design. 
+The Platform, written in C++17 and working on Ubuntu 18.04, 
+offers an extensive range of APIs and interfaces 
+for low-level status retrieving/controlling, CSI extraction, and on-line CSI processing. 
+To parallelize the workload of multiple NICs, 
+the platform allocates an independent asynchronous data pipeline for each NIC.
+%
+As a reliable and highly efficient foundation, 
+\ourprotocol Platform significantly simplify and solidify 
+the development of higher level application.
+For example, the round-trip channel measurement plug-in is written in less than 300 lines.
+
+PicoScenes ecosystem, including PicoScenes Kernel, Platform, MATLAB Toolbox, documents and installation scripts are fully released on GitLab\cite{PicoScenes_URL}.
+
 
 \begin{table}[tb]
 	\caption{Unlocked Hardware Characteristics}
@@ -32,9 +71,9 @@ With the unlocked hardware, we can ....;
 	\hline
 	\multicolumn{3}{c}{$cf$ Tuning Range \& Resolution} \\
 	\hline
-	Band$^1$ & Range & Resolution\\
+	Band & Range & Resolution\\
 	\hline
-	2.4G & $2.2\sim 3.0$GHz & 250Hz \\
+	2.4G & $2.2\sim 3.05$GHz & 250Hz \\
 	% \hline
 	5G   & $4.4\sim 6.1$GHz & 1KHz \\
 	\hline
@@ -42,32 +81,20 @@ With the unlocked hardware, we can ....;
 	\hline
 	\multicolumn{3}{c}{$cf$ Tuning Speed} \\
 	\hline
-	Tuning Mode & \multicolumn{2}{c}{Time Cost}\\
+	Tuning Mode~\tablefootnote{
+	\textit{direct-synth} mode directly hacks the $cf$ synthesizer and leaves anything else untouched; 
+	\textit{ath9k-fastcc} mode handles the non-crossband cases with the ath9k \textit{fast} channel change protocol; 
+	\textit{ath9k-reset} mode hanles the crossband cases with the ath9k \textit{reset}-based channel change protocol.
+	} & \multicolumn{2}{c}{Time Cost}\\
 	\hline
-	Direct$^2$ & \multicolumn{2}{c}{20$us$} \\
+	direct-synth & \multicolumn{2}{c}{20$us$} \\
 	% \hline
-	Normal$^3$   & \multicolumn{2}{c}{90$us$} \\
+	ath9k-fastcc & \multicolumn{2}{c}{90$us$} \\
 	% \hline
-	Normal-Reset$^4$   & \multicolumn{2}{c}{500$us$} \\
+	ath9k-reset & \multicolumn{2}{c}{500$us$} \\
 	\hline
 	\end{tabular}
-	\caption*{1. The hardware adopts different signal paths for 2.4/5GHz band, thus the range and resolution are different and they are discontinuous. 2. $Direct$ mode only changes the synthesizer;
-	3. $Normal$ mode is the original tuning strategy handling non-cross band case; 4. $Normal-Reset$ is the procedure handling the cross-band case. }
 \end{table}
-
-
-\subsection{Kernel and Use Space Platform} % (fold)
-\label{sub:picoscenes_platfrom}
-
-In kernel space, we introduce PicoScenes RT-Kernel (currently based on  LTS-version Linux kernel 4.9 and Linux RT customization). We enhance the reconfigurability of ath9k driver, including the direct runtime hacking for $cf$ synthesizer, Tx-power, Tx/Rx Chainmask, and \etc. Besides that, we also merge the kernel hacking of Intel 5300 CSI Tool. In this way, we for the first time propose an unified Linux kernel for CSI measurement from both ar9300 and Intel 5300. 
-
-On user space, we introduce \textbf{PicoScenes} UWB array control platform. Rather than a monolithic App, \ourprotocol adopts the ``Platform + Plug-Ins'' design. The \ourprotocol platform, written in C++17, offers an extensive range of APIs and interfaces for low-level status retrieving/controlling, CSI extraction, and on-line CSI processing. 
-To scale up the workload for one NIC to many, 
-the platform adopts the \textit{reactive} paradigm and industrial-grade multi-threading API.
-
-As a reliable and highly efficient Swiss Army Knife for NIC control, \ourprotocol platform dramatically simplify and solidify the development of ar9300/Intel5300 based UWB application.
-For example, the core handle function of round-trip channel measurement plug-in is written in less than 300 lines.
-
 
 
 % subsection picoscenes_platfrom (end)
