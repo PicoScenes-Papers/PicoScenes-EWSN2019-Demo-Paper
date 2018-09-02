@@ -6,31 +6,38 @@
 The phase measurement $\phi(k)$ for sub-carrier $k$ of the $i$-th package can be expressed as
 \begin{equation}
 \label{eq:phase_equation}
-	\phi_k = \theta_k - 2\pi\cdot k\cdot f_s\cdot(\delta_i + \lambda_{sfo}) + \lambda_{cfo}
+	\phi_k = \theta_k - 2\pi\cdot k\cdot f_s\cdot(\delta_i + \delta_{sfo}) + \lambda_{cfo} + \omega_k
 \end{equation}
-where $\theta_k$ is in-air channel phase measurement; $f_s$ is the subcarrier bandwidth, \ie 312.5KHz in 802.11n/ac case, $\delta_i$ and $\lambda_{sfo}$ are the time delay caused by Packet Detection Delay (PDD) and baseband Sampling Frequency Offset (SFO), respectively; and $\lambda_{cfo}$ is the phase offset introduced by Carrier Frequency Offset (CFO).
+where $\theta_k$ is in-air channel phase measurement; $f_s$ is the subcarrier bandwidth, \ie 312.5KHz in 802.11n/ac case, $\delta_i$ and $\delta_{sfo}$ are the time delay caused by Packet Detection Delay (PDD) and baseband Sampling Frequency Offset (SFO), respectively; $\lambda_{cfo}$ is the phase offset introduced by Carrier Frequency Offset (CFO); and $\omega_k$ is the measurement noise term following zero-mean Gaussian distribution.
+
 
 \subsubsection{Removing PDD Error $\delta_i$} % (fold)
 \label{ssub:removing_pdd}
-The packet detection uncertainty cause the per-packet time shift, \ie PDD term $\delta_i$ in \equref{eq:phase_equation}. To remove PDD error, we leverage an observation that, PDD follows a Gussian distribution with the zero mean\cite{Speth1999Optimum}. According to the law of large numbers, $\delta_i$ can be removed by averaging over the raw phase measurement $\phi$.
+The packet detection uncertainty causes the per-packet time shift, \ie PDD term $\delta_i$ in \equref{eq:phase_equation}. To remove PDD error, we leverage an observation that, PDD follows a Gussian distribution with the zero mean\cite{Speth1999Optimum}, \ie $\delta$ component is stripped away from the averaged phase measurement $\bar{\phi_k}$.
 % subsubsection removing_pdd (end)
 
-\subsubsection{Removing SFO Error $\lambda_{sfo}$} % (fold)
+\subsubsection{Removing SFO Error $\delta_{sfo}$} % (fold)
 \label{ssub:removing_sfo}
 
-The baseband sampling frqeuency of the communication pair is not strictly aligned, 
-and their frequency offset causes a minute-scale time shift, 
-\ie SFO term $\lambda_{sfo}$ in \equref{eq:phase_equation}. 
-SFO, manifesting itself as an \textit{slope} term in phase measurement, 
-has severe impact on UWB stitching.
+The sampling frequency of the $tx$'s DAC and the $rx$'s ADC is usually not perfectly matched, 
+\ie the baseband sampling frequency offset (SFO), $\delta_{sfo}$. 
+It is mathematically defined as follow,
+\begin{equation}
+\label{eq:sfo}
+	\delta_{sfo} = 1 - f_{rx}/f_{tx}
+\end{equation}
+where $f_{tx}$ and $f_{rx}$ are the sampling frequencies of $tx$ and $rx$, respectively. 
+SFO, manifesting itself as the \textit{slope} component in phase measurement, 
+has severe impact on UWB spectrum stitching.
+                                                                 
 
-Splicer~\cite{Xie2015Precise} and $\pi$-Splicer\cite{Zhu:2018fc} 
-propose different strategy on removing SFO error. 
-The former searches for the optimal $\lambda_{sfo}$ 
+Both Splicer~\cite{Xie2015Precise} and $\pi$-Splicer\cite{Zhu:2018fc} 
+proposes their methods to remove $\delta_{sfo}$. 
+The former searches for the optimal $\delta_{sfo}$ 
 based on the Power Delay Profile (PDP) similarity, 
 which is computationally inefficient. 
 Besides that, the assumption of PDP invariance is not held in UWB senario. 
-$\pi$-Splicer\cite{Zhu:2018fc} elegently transforms the $\lambda_{sfo}$ removal problem
+$\pi$-Splicer\cite{Zhu:2018fc} elegently transforms the $\delta_{sfo}$ removal problem
 into a Linear Least Squares (LLS) from, 
 which can be solved efficiently.
 However, 
@@ -39,26 +46,60 @@ Thus LLS solver may bend all phase measurements in very wrong direction
 to boost the local smoothness around the joins.
 This problem is intolerable in the much wider UWB scale stitching.
 
-In addition to the synchronous $cf$ shift, 
+In addition to the synchronous channel shift, 
 the pair of ar9300 NICs perform the round-trip channel estimation 
 by densely exchanging the channel probing frames.
-We denote the both end as \textit{Initiator} and \textit{Responder} respectively,
-and further the measurement 
-Due to the channel reciprocity characteristic, 
-we have $\theta_k^{fore} = \theta_k^{back}$.
+We denote the both end as \textit{Init} and \textit{Resp} respectively,
+and further denote the measurement from and back to \textit{Init} as $fore$ and $back$ respectively.
+In such manner, we have the round-trip channel estimation $H^{fore}$ and $H^{back}$,
+and the phase measurement $\phi^{fore}$ and $\phi^{back}$.
+
+Now we inspect each factor of the phase measurement.
+First, due to the reciprocity effect of the wireless channel,
+the in-air phase measurement is identical, 
+\ie $\theta_k^{fore} = \theta_k^{back} = \theta_k$.
+%
+Second, the PDD error term $\delta$ causes the per-packet slope variation.
+As previously described, 
+we remove this error by averaging over the raw measurements, 
+\ie $\bar{\phi^{fore}}$ and $\bar{\phi^{back}}$ are isolated from PDD error.
+%
+Third, we denote the bi-directional SFO as $\delta_{sfo}^{fore}$ and $\delta_{sfo}^{back}$.
+According to Equation~\ref{eq:sfo}, they are as follow 
+\begin{eqnarray}
+	\delta_{sfo}^{fore} & = & 1 - f_{Resp} / f_{Init} \nonumber \\
+	\delta_{sfo}^{back} & = & 1 - f_{Init} / f_{Resp} \nonumber
+\end{eqnarray}
+where $f_{Init}$ and $f_{Resp}$ denote the baseband sampling frequency at \textit{Init} and \textit{Resp}, respectively. 
+Their similar definition suggests us to 
+
+\begin{eqnarray}
+	\delta_{sfo}^{rt} & = & \frac{\delta_{sfo}^{fore} + \delta_{sfo}^{back}}{2} = 1 - \Delta_{sfo}^{rt} \\
+	\Delta_{sfo}^{rt} & = & 0.5(\frac{f_{Init}}{f_{Resp}} + \frac{f_{Resp}}{f_{Init}}) \nonumber
+	\label{eq:sfo_rt}
+\end{eqnarray}
+
+According to 802.11n spec~\cite[Chapter 20.3.21.6]{80211n_spec}, 
+the SFO error in both transmitter and receiver end should not exceed $\pm$25ppm.
+Within this small range, 
+both $f_{Init}/f_{Resp}$ and its reciprocal, $f_{Resp}/f_{Init}$, 
+converge to 1 with such a small offset, 
+that they neutralize each other in $\Delta_{sfo}^{rt}$ to a significant degree.
+In fact,
+the round-trip SFO error, $\delta_{sfo}^{rt}$, is at last \textit{several orders of magnitude smaller} 
+than that of the single-trip, $\delta_{sfo}^{fore}$ or $\delta_{sfo}^{back}$.
+%
+To further verify this theory,
+we simulate the SFO in range of $\pm$25ppm, \ie $\pm$1000Hz for 20MHz.
+The SFO comparison is shown in Figure x.
+We see that 20ppm SFO in single-trip measurement is neutralized to round 0.01ppm in round-trip measurement.
+Based on this important observation, we draw a conclusion that
+\textit{SFO error $\delta_{sfo}$ can be nullified to quite close to zero via round-trip averaging}.
 
 
-Further we denote the baseband sampling frequency at both end
-are $f_{bs}^{fore}$ and $f_{bs}^{back}$ respectively.
-Thus, SFO error in both end are
-\begin{equation}
-	\lambda_{sfo}^{fore} = f_{bs}^{back} - f_{bs}^{fore} 
-\end{equation}
-\begin{equation}
-	\lambda_{sfo}^{back} = f_{bs}^{fore} - f_{bs}^{back} 
-\end{equation}
 
-Assume PPD error in both end has been reomved, the slope term in phase measurement $\bar{\phi_k}$ is $2\pi\cdot k\cdot f_s\cdot\lambda_{sfo}^{fore}$, and $2\pi\cdot k\cdot f_s\cdot\lambda_{sfo}^{back}$. Apparently, their sum is zero. So we say, the averaged phase of the round-trip phase measurement 
+
+
 
 
 % subsubsection removing_sfo (end)
